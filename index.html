@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=utf-8 />
+<title>Cykelolyckor Jönköping</title>
+<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+
+<script src='https://api.tiles.mapbox.com/mapbox.js/v2.1.6/mapbox.js'></script>
+<link href='https://api.tiles.mapbox.com/mapbox.js/v2.1.6/mapbox.css' rel='stylesheet' />
+
+<style>
+  body { margin:0; padding:0; }
+  #map { position:absolute; top:0; bottom:0; width:100%; }
+
+</style>
+</head>
+<body>
+
+	<script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-locatecontrol/v0.24.0/L.Control.Locate.js'></script>
+	<link href='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-locatecontrol/v0.24.0/L.Control.Locate.css' rel='stylesheet' />
+	<script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-hash/v0.2.1/leaflet-hash.js'></script>
+	<script src="http://k4r573n.github.io/leaflet-control-osm-geocoder/Control.OSMGeocoder.js"></script>
+	<script src='https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-heat/v0.1.3/leaflet-heat.js'></script>
+
+<div id='map'></div>
+
+<script>
+L.mapbox.accessToken = 'fill in your Mapbox API-key which you get after registration at MapBOX';
+
+	var map = L.mapbox.map('map', 'examples.map-i86nkdio')
+		.setView([57.7785, 14.1713], 13)
+		
+// Sharing-button for Facebook, Twitter and Pinterest
+//		.addControl(L.mapbox.shareControl())
+
+// Information shown when clicking the information-i in the downright corner. HTML are allowed for formatting and links and images-
+		.addControl(L.mapbox.infoControl().addInfo('<h2>Cykelolyckor från Transportstyrelsens databas STRADA</h2> Initialt visas s.k. heat map som visar var olyckor oftast sker. Man kan tända skikt över enskilda olyckor med lagerknappen uppe till höger. Ikonernas symbol och färg indikerar olyckornas typ och allvarlighetsgrad. Datat sträcker sig från 2005-2014 och baseras på inrapporterade olyckor av polis och sjukhus.<br><br>Klickar man på ikonerna så ser man attribut såsom datum, allvarlighet och beskrivning av plats. Vill man se var man är klickar man på knappen med pil uppe till vänster.<br><img src="http://meandernatur.se/cykelolyckor_jkpg/graf.png">'));
+
+// Adding the heat map from the imported positions
+	var heat = L.heatLayer([], { maxZoom: 17 }).addTo(map);
+
+// Creating the accident layer and formatting the marker-popups
+	var cykel = L.mapbox.featureLayer()
+		.loadURL('cykelolyckor_demo.geojson')
+//		.addTo(map)
+		.on('ready', function() {
+			cykel.eachLayer(function(layer) {
+// here you call `bindPopup` with a string of HTML you create - the feature
+// properties declared above are available under `layer.feature.properties`
+
+			layer.bindPopup('<b>' + layer.feature.properties.Olyckstyp +  
+			'<br>' + layer.feature.properties.Datum + ', kl. ' + layer.feature.properties.Klockslag + '</b>' +
+			'<br>' + layer.feature.properties.Olycksplats +
+			'<br>' + layer.feature.properties.Platstyp +
+			'<br>' + layer.feature.properties.Attribut_till_platstyp +
+			'<br>' + layer.feature.properties.Sammanvägd_svårhetsgrad +
+			'<br>Vägomständighet: ' + layer.feature.properties.Vägomständigheter 
+			);
+		});
+	});
+		
+
+// Importing the positions for the heat map layer
+	var cykelheat = L.mapbox.featureLayer()
+		.loadURL('cykelolyckor_demo.geojson')
+		.on('ready', function() {
+//		    map.fitBounds(cykelheat.getBounds()); // fitting the zoom to include all positions
+
+// Add each marker point to the heatmap.
+			cykelheat.eachLayer(function(l) {
+			heat.addLatLng(l.getLatLng());
+			});
+		})
+	;
+
+// Adding the dynamic URL - including zoom level and center point coordinates in the URL
+  var hash = new L.Hash(map);
+  
+	L.control.locate({
+		setView: true, 
+		locateOptions: {
+			maxZoom: 16
+		}}).addTo(map);
+	
+// create a layer control
+// add the base layers
+	var baseLayers = {};
+    
+// add the overlays
+	
+	var overlays = {
+		"Täthet cykelolyckor": heat,
+		"Cykelolyckor": cykel
+	};
+
+// add the layers to a layer control
+	L.control.layers(baseLayers, overlays).addTo(map);
+
+
+
+
+</script>
+</body>
+</html>
